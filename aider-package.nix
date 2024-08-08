@@ -2,14 +2,16 @@
 { lib, pkgs }:
 
 let
-  python3Packages = pkgs.python311Packages;
-  tree_sitter_version = "0.22.3";
+  python3Packages = pkgs.python312Packages;
+  tree_sitter_version = "0.22.6";
   tree_sitter_languages_version = "1.10.2";
+
   # configparser = pkgs.fetchPypi {
   #   pname = "configparser";
   #   version = "5.0.2";
   #   sha256 = "hdXeECz+bRSlFyZ28J0ZxGXOY9YBnPCk7xM4X8U16Cg=";
   # };
+
   configparser = python3Packages.buildPythonPackage rec {
     pname = "configparser";
     version = "5.0.2";
@@ -24,14 +26,56 @@ let
       license = licenses.asl20;
     };
   };
+
+  tree_sitter = python3Packages.buildPythonPackage rec {
+    pname = "tree-sitter";
+    version = tree_sitter_version;
+    src = pkgs.fetchFromGitHub {
+      owner = "tree-sitter";
+      repo = "tree-sitter";
+      rev = "v${version}";
+      sha256 = "jBCKgDlvXwA7Z4GDBJ+aZc52zC+om30DtsZJuHado1s=";
+    };
+    nativeBuildInputs = with python3Packages; [ setuptools wheel pip ];
+    propagatedBuildInputs = with python3Packages; [];
+    meta = with lib; {
+      description = "Tree-sitter";
+      license = licenses.mit;
+    };
+  };
+
+  tree_sitter_languages = python3Packages.buildPythonPackage rec {
+    pname = "tree-sitter-languages";
+    version = tree_sitter_languages_version;
+    src = pkgs.fetchFromGitHub {
+      owner = "grantjenks";
+      repo = "py-tree-sitter-languages";
+      rev = "v${version}";
+      sha256 = "AuPK15xtLiQx6N2OATVJFecsL8k3pOagrWu1GascbwM=";
+    };
+    nativeBuildInputs = with python3Packages; [ setuptools wheel pip ];
+    propagatedBuildInputs = [ tree_sitter ];
+    meta = with lib; {
+      description = "Tree-sitter languages";
+      license = licenses.mit;
+    };
+  };
+
+  python3PackagesOverrides = python3Packages.override {
+    overrides = python-self: python-super: {
+      tree-sitter = tree_sitter;
+    };
+  };
 in
 python3Packages.buildPythonPackage rec {
   pname = "aider";
-  version = "0.2.4";
+  version = "0.48.0";
 
-  src = pkgs.fetchPypi {
-    inherit pname version;
-    sha256 = "1f0xfr2x5a687z6384p5rj8zdfbs1fxqa4agw9qgwk5mr6qgb8f8";
+  src = pkgs.fetchFromGitHub {
+    owner = "paul-gauthier";
+    repo = "aider";
+    rev = "v0.48.0";
+    sha256 = "0m5ZHCfxlOOeUvfQznF5hTCJANCBtrO9rWDudQ+RUxM=";
   };
 
   nativeBuildInputs = with python3Packages; [
@@ -123,10 +167,10 @@ python3Packages.buildPythonPackage rec {
     tiktoken
     tokenizers
     tqdm
-    #tree-sitter
-    #tree-sitter-languages
-    #tree-sitter.override { version = tree_sitter_version; }
-    #tree-sitter-languages.override { version = tree_sitter_languages_version; }
+    tree-sitter
+    tree-sitter-languages
+    # tree-sitter.override { version = tree_sitter_version; }
+    # tree-sitter-languages.override { version = tree_sitter_languages_version; }
     typing-extensions
     urllib3
     wcwidth
