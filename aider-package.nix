@@ -3,8 +3,8 @@
 
 let
   python3Packages = pkgs.python312Packages;
-  tree_sitter_version = "0.22.6";
-  tree_sitter_languages_version = "1.10.2";
+  py_tree_sitter_version = "0.22.3";
+  py_tree_sitter_languages_version = "1.10.2";
 
   # configparser = pkgs.fetchPypi {
   #   pname = "configparser";
@@ -27,26 +27,87 @@ let
     };
   };
 
-  tree_sitter = python3Packages.buildPythonPackage rec {
-    pname = "tree-sitter";
-    version = tree_sitter_version;
+  # tree_sitter = python3Packages.buildPythonPackage rec {
+  #   pname = "tree-sitter";
+  #   version = "0.22.6";
+  #   src = pkgs.fetchFromGitHub {
+  #     owner = "tree-sitter";
+  #     repo = "tree-sitter";
+  #     rev = "v${version}";
+  #     sha256 = "jBCKgDlvXwA7Z4GDBJ+aZc52zC+om30DtsZJuHado1s=";
+  #   };
+  #   nativeBuildInputs = with python3Packages; [ setuptools wheel pip ];
+  #   propagatedBuildInputs = with python3Packages; [];
+  #   meta = with lib; {
+  #     description = "Tree-sitter";
+  #     license = licenses.mit;
+  #   };
+  # };
+
+  # tree_sitter = pkgs.rustPlatform.buildRustPackage rec {
+  #   pname = "tree-sitter";
+  #   version = "0.22.6";
+  #   src = pkgs.fetchFromGitHub {
+  #     owner = "tree-sitter";
+  #     repo = "tree-sitter";
+  #     rev = "v${version}";
+  #     sha256 = "jBCKgDlvXwA7Z4GDBJ+aZc52zC+om30DtsZJuHado1s=";
+  #   };
+
+  #   cargoSha256 = "44FIO0kPso6NxjLwmggsheILba3r9GEhDld2ddt601g=";
+
+  #   meta = with lib; {
+  #     description = "Tree-sitter core library";
+  #     license = licenses.mit;
+  #   };
+  # };
+
+  py_tree_sitter = python3Packages.buildPythonPackage rec {
+    pname = "py-tree-sitter";
+    version = py_tree_sitter_version;
     src = pkgs.fetchFromGitHub {
       owner = "tree-sitter";
-      repo = "tree-sitter";
+      repo = "py-tree-sitter";
       rev = "v${version}";
-      sha256 = "jBCKgDlvXwA7Z4GDBJ+aZc52zC+om30DtsZJuHado1s=";
+      sha256 = "VrFRQFO1K8v46Lowy2+kDseXzInJsmgl9yEECu9uMqQ=";
     };
     nativeBuildInputs = with python3Packages; [ setuptools wheel pip ];
-    propagatedBuildInputs = with python3Packages; [];
+    propagatedBuildInputs = [ pkgs.tree-sitter ];
+    # propagatedBuildInputs = [ tree_sitter ];
+    # buildInputs = [ tree_sitter_lib ];
+
+    # tree_sitter_lib = final.fetchFromGitHub {
+    #   owner = "tree-sitter";
+    #   repo = "tree-sitter";
+    #   rev = "0.20.6";
+    #   sha256 = "jBCKgDlvXwA7Z4GDBJ+aZc52zC+om30DtsZJuHado1s=";
+    # };
+
+    # preBuild = ''
+    #   export CFLAGS="-I${tree_sitter_lib}/include"
+    #   export LDFLAGS="-L${tree_sitter_lib}/lib"
+    # '';
+
+    preBuild = ''
+      export CFLAGS="-I${pkgs.tree-sitter}/include"
+      export LDFLAGS="-L${pkgs.tree-sitter}/lib"
+
+      # Create expected directory structure
+      mkdir -p tree_sitter/core/lib/src
+
+      # Link or copy tree-sitter source files into the expected directory
+      cp -r ${pkgs.tree-sitter}/lib/* tree_sitter/core/lib/src/
+    '';
+
     meta = with lib; {
       description = "Tree-sitter";
       license = licenses.mit;
     };
   };
 
-  tree_sitter_languages = python3Packages.buildPythonPackage rec {
+  py_tree_sitter_languages = python3Packages.buildPythonPackage rec {
     pname = "tree-sitter-languages";
-    version = tree_sitter_languages_version;
+    version = py_tree_sitter_languages_version;
     src = pkgs.fetchFromGitHub {
       owner = "grantjenks";
       repo = "py-tree-sitter-languages";
@@ -54,18 +115,18 @@ let
       sha256 = "AuPK15xtLiQx6N2OATVJFecsL8k3pOagrWu1GascbwM=";
     };
     nativeBuildInputs = with python3Packages; [ setuptools wheel pip ];
-    propagatedBuildInputs = [ tree_sitter ];
+    propagatedBuildInputs = [ py_tree_sitter ];
     meta = with lib; {
       description = "Tree-sitter languages";
       license = licenses.mit;
     };
   };
 
-  python3PackagesOverrides = python3Packages.override {
-    overrides = python-self: python-super: {
-      tree-sitter = tree_sitter;
-    };
-  };
+  # python3PackagesOverrides = python3Packages.override {
+  #   overrides = python-self: python-super: {
+  #     tree-sitter = tree_sitter;
+  #   };
+  # };
 in
 python3Packages.buildPythonPackage rec {
   pname = "aider";
@@ -84,98 +145,86 @@ python3Packages.buildPythonPackage rec {
     pip
   ];
 
-  propagatedBuildInputs = with python3Packages; [
-    aiohttp
-    aiohappyeyeballs
-    aiosignal
-    annotated-types
-    anyio
-    attrs
-    backoff
-    beautifulsoup4
-    certifi
-    cffi
-    charset-normalizer
-    click
-    configargparse
-    configparser
-    # (python3Packages.buildPythonPackage rec {
-    #   pname = "configparser";
-    #   version = "5.0.2";
-    #   src = pkgs.fetchPypi {
-    #     inherit pname version;
-    #     sha256 = "hdXeECz+bRSlFyZ28J0ZxGXOY9YBnPCk7xM4X8U16Cg=";
-    #   };
-    #   meta = with lib; {
-    #     description = "Configuration file parser for Python";
-    #     license = licenses.asl20;
-    #   };
-    # })
-    diff-match-patch
-    diskcache
-    distro
-    filelock
-    flake8
-    frozenlist
-    fsspec
-    gitdb
-    gitpython
+  propagatedBuildInputs = [
+    python3Packages.aiohttp
+    python3Packages.aiohappyeyeballs
+    python3Packages.aiosignal
+    python3Packages.annotated-types
+    python3Packages.anyio
+    python3Packages.attrs
+    python3Packages.backoff
+    python3Packages.beautifulsoup4
+    python3Packages.certifi
+    python3Packages.cffi
+    python3Packages.charset-normalizer
+    python3Packages.click
+    python3Packages.configargparse
+    python3Packages.diff-match-patch
+    python3Packages.diskcache
+    python3Packages.distro
+    python3Packages.filelock
+    python3Packages.flake8
+    python3Packages.frozenlist
+    python3Packages.fsspec
+    python3Packages.gitdb
+    python3Packages.gitpython
     # grep-ast
-    h11
-    httpcore
-    httpx
-    huggingface-hub
-    idna
-    importlib-metadata
-    importlib-resources
-    jinja2
-    jsonschema
-    jsonschema-specifications
-    litellm
-    markdown-it-py
-    markupsafe
-    mccabe
-    mdurl
-    multidict
-    networkx
-    numpy
-    openai
-    packaging
-    pathspec
-    pillow
-    prompt-toolkit
-    pycodestyle
-    pycparser
-    pydantic
-    pydantic-core
-    pyflakes
-    pygments
-    pypandoc
-    python-dotenv
-    pyyaml
-    referencing
-    regex
-    requests
-    rich
-    rpds-py
-    scipy
-    smmap
-    sniffio
-    sounddevice
-    soundfile
-    soupsieve
-    tiktoken
-    tokenizers
-    tqdm
-    tree-sitter
-    tree-sitter-languages
+    python3Packages.h11
+    python3Packages.httpcore
+    python3Packages.httpx
+    python3Packages.huggingface-hub
+    python3Packages.idna
+    python3Packages.importlib-metadata
+    python3Packages.importlib-resources
+    python3Packages.jinja2
+    python3Packages.jsonschema
+    python3Packages.jsonschema-specifications
+    python3Packages.litellm
+    python3Packages.markdown-it-py
+    python3Packages.markupsafe
+    python3Packages.mccabe
+    python3Packages.mdurl
+    python3Packages.multidict
+    python3Packages.networkx
+    python3Packages.numpy
+    python3Packages.openai
+    python3Packages.packaging
+    python3Packages.pathspec
+    python3Packages.pillow
+    python3Packages.prompt-toolkit
+    python3Packages.pycodestyle
+    python3Packages.pycparser
+    python3Packages.pydantic
+    python3Packages.pydantic-core
+    python3Packages.pyflakes
+    python3Packages.pygments
+    python3Packages.pypandoc
+    python3Packages.python-dotenv
+    python3Packages.pyyaml
+    python3Packages.referencing
+    python3Packages.regex
+    python3Packages.requests
+    python3Packages.rich
+    python3Packages.rpds-py
+    python3Packages.scipy
+    python3Packages.smmap
+    python3Packages.sniffio
+    python3Packages.sounddevice
+    python3Packages.soundfile
+    python3Packages.soupsieve
+    python3Packages.tiktoken
+    python3Packages.tokenizers
+    python3Packages.tqdm
     # tree-sitter.override { version = tree_sitter_version; }
     # tree-sitter-languages.override { version = tree_sitter_languages_version; }
-    typing-extensions
-    urllib3
-    wcwidth
-    yarl
-    zipp
+    python3Packages.typing-extensions
+    python3Packages.urllib3
+    python3Packages.wcwidth
+    python3Packages.yarl
+    python3Packages.zipp
+    py_tree_sitter
+    py_tree_sitter_languages
+    configparser
   ];
 
   pythonImportsCheck = ["aider"];
