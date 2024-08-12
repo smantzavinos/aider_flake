@@ -5,6 +5,8 @@ let
   python3Packages = pkgs.python312Packages;
   py_tree_sitter_version = "0.22.3";
   py_tree_sitter_languages_version = "1.10.2";
+  # No tags, so depend on commit hash
+  grep_ast_version = "a5dd50c8063360febe6ecf0acefca6c7f69198e1";
 
   # configparser = pkgs.fetchPypi {
   #   pname = "configparser";
@@ -67,6 +69,22 @@ let
     };
   };
 
+  grep_ast = python3Packages.buildPythonPackage rec {
+    pname = "grep-ast";
+    version = grep_ast_version;
+    src = pkgs.fetchFromGitHub {
+      owner = "paul-gauthier";
+      repo = "grep-ast";
+      rev = "${version}";
+      sha256 = "AuPK15xtLiQx6N2OATVJFecsL8k3pOagrWu1GascbwM=";
+    };
+    nativeBuildInputs = with python3PackagesOverridden; [ setuptools wheel pip cython ];
+    propagatedBuildInputs = [ py_tree_sitter py_tree_sitter_languages ];
+    meta = with lib; {
+      description = "Grep-AST";
+      license = licenses.mit;
+    };
+  };
   # python3PackagesOverrides = python3Packages.override {
   #   overrides = python-self: python-super: {
   #     tree-sitter = tree_sitter;
@@ -173,6 +191,7 @@ python3Packages.buildPythonPackage rec {
     py_tree_sitter
     py_tree_sitter_languages
     configparser
+    grep_ast
   ];
 
   pythonImportsCheck = ["aider"];
