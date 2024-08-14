@@ -1,219 +1,109 @@
-# { pkgs, lib, buildPythonPackage, fetchPypi, python3Packages }:
-{ lib, pkgs }:
+{
+  lib,
+  stdenv,
+  python311,
+  fetchFromGitHub,
+  git,
+  portaudio,
+}:
 
 let
-  python3Packages = pkgs.python312Packages;
-  py_tree_sitter_version = "0.22.3";
-  py_tree_sitter_languages_version = "1.10.2";
-  # No tags, so depend on commit hash
-  grep_ast_version = "a5dd50c8063360febe6ecf0acefca6c7f69198e1";
-
-  # configparser = pkgs.fetchPypi {
-  #   pname = "configparser";
-  #   version = "5.0.2";
-  #   sha256 = "hdXeECz+bRSlFyZ28J0ZxGXOY9YBnPCk7xM4X8U16Cg=";
-  # };
-
-  configparser = python3Packages.buildPythonPackage rec {
-    pname = "configparser";
-    version = "5.0.2";
-    src = pkgs.fetchPypi {
-      inherit pname version;
-      sha256 = "hdXeECz+bRSlFyZ28J0ZxGXOY9YBnPCk7xM4X8U16Cg=";
-    };
-    nativeBuildInputs = with python3Packages; [ setuptools wheel pip ];
-    propagatedBuildInputs = with python3Packages; [ setuptools_scm ];
-    meta = with lib; {
-      description = "Configuration file parser for Python";
-      license = licenses.asl20;
-    };
+  python3 = python311.override {
+    self = python3;
+    packageOverrides = _: super: { tree-sitter = super.tree-sitter_0_21; };
   };
-
-  py_tree_sitter = python3Packages.buildPythonPackage rec {
-    pname = "py-tree-sitter";
-    version = py_tree_sitter_version;
-    src = pkgs.fetchFromGitHub {
-      owner = "tree-sitter";
-      repo = "py-tree-sitter";
-      rev = "v${version}";
-      sha256 = "4lxE8oDFE0X7YAnB72PKIaHIqovWSM5QnFo0grPAtKU=";
-      fetchSubmodules = true;
-    };
-
-    # Tests depend on language bindings and were failing. Disable for now.
-    doCheck = false;
-
-    nativeBuildInputs = with python3Packages; [ setuptools wheel pip ];
-    propagatedBuildInputs = [ pkgs.tree-sitter ];
-
-    meta = with lib; {
-      description = "Tree-sitter";
-      license = licenses.mit;
-    };
-  };
-
-  py_tree_sitter_languages = python3Packages.buildPythonPackage rec {
-    pname = "tree-sitter-languages";
-    version = py_tree_sitter_languages_version;
-    src = pkgs.fetchFromGitHub {
-      owner = "grantjenks";
-      repo = "py-tree-sitter-languages";
-      rev = "v${version}";
-      sha256 = "AuPK15xtLiQx6N2OATVJFecsL8k3pOagrWu1GascbwM=";
-    };
-    nativeBuildInputs = with python3Packages; [ setuptools wheel pip cython ];
-    propagatedBuildInputs = [ py_tree_sitter ];
-    meta = with lib; {
-      description = "Tree-sitter languages";
-      license = licenses.mit;
-    };
-  };
-
-  grep_ast = python3Packages.buildPythonPackage rec {
-    pname = "grep-ast";
-    version = grep_ast_version;
-    src = pkgs.fetchFromGitHub {
-      owner = "paul-gauthier";
-      repo = "grep-ast";
-      rev = "${version}";
-      sha256 = "AuPK15xtLiQx6N2OATVJFecsL8k3pOagrWu1GascbwM=";
-    };
-    nativeBuildInputs = with python3PackagesOverridden; [ setuptools wheel pip cython ];
-    propagatedBuildInputs = [ py_tree_sitter py_tree_sitter_languages ];
-    meta = with lib; {
-      description = "Grep-AST";
-      license = licenses.mit;
-    };
-  };
-  # python3PackagesOverrides = python3Packages.override {
-  #   overrides = python-self: python-super: {
-  #     tree-sitter = tree_sitter;
-  #   };
-  # };
 in
-python3Packages.buildPythonPackage rec {
-  pname = "aider";
+python3.pkgs.buildPythonApplication rec {
+  pname = "aider-chat";
   version = "0.48.0";
+  pyproject = true;
 
-  src = pkgs.fetchFromGitHub {
+  src = fetchFromGitHub {
     owner = "paul-gauthier";
     repo = "aider";
-    rev = "v0.48.0";
-    sha256 = "0m5ZHCfxlOOeUvfQznF5hTCJANCBtrO9rWDudQ+RUxM=";
+    rev = "v${version}";
+    hash = "sha256-0m5ZHCfxlOOeUvfQznF5hTCJANCBtrO9rWDudQ+RUxM=";
   };
 
-  # Tests depend on language bindings and were failing. Disable for now.
-  doCheck = false;
+  build-system = with python3.pkgs; [ setuptools ];
 
-  nativeBuildInputs = with python3Packages; [
-    setuptools
-    wheel
-    pip
+  dependencies =
+    with python3.pkgs;
+    [
+      aiohappyeyeballs
+      backoff
+      beautifulsoup4
+      configargparse
+      diff-match-patch
+      diskcache
+      flake8
+      gitpython
+      grep-ast
+      importlib-resources
+      jsonschema
+      litellm
+      networkx
+      numpy
+      packaging
+      pathspec
+      pillow
+      playwright
+      prompt-toolkit
+      pypandoc
+      pyyaml
+      rich
+      scipy
+      sounddevice
+      soundfile
+      streamlit
+      watchdog
+    ]
+    ++ lib.optionals (!tensorflow.meta.broken) [
+      llama-index-core
+      llama-index-embeddings-huggingface
+    ];
+
+  buildInputs = [ portaudio ];
+
+  pythonRelaxDeps = true;
+
+  nativeCheckInputs = (with python3.pkgs; [ pytestCheckHook ]) ++ [ git ];
+
+  disabledTestPaths = [
+    # requires network
+    "tests/scrape/test_scrape.py"
+
+    # Expected 'mock' to have been called once
+    "tests/help/test_help.py"
   ];
 
-  propagatedBuildInputs = [
-    python3Packages.aiohttp
-    python3Packages.aiohappyeyeballs
-    python3Packages.aiosignal
-    python3Packages.annotated-types
-    python3Packages.anyio
-    python3Packages.attrs
-    python3Packages.backoff
-    python3Packages.beautifulsoup4
-    python3Packages.certifi
-    python3Packages.cffi
-    python3Packages.charset-normalizer
-    python3Packages.click
-    python3Packages.configargparse
-    python3Packages.diff-match-patch
-    python3Packages.diskcache
-    python3Packages.distro
-    python3Packages.filelock
-    python3Packages.flake8
-    python3Packages.frozenlist
-    python3Packages.fsspec
-    python3Packages.gitdb
-    python3Packages.gitpython
-    # grep-ast
-    python3Packages.h11
-    python3Packages.httpcore
-    python3Packages.httpx
-    python3Packages.huggingface-hub
-    python3Packages.idna
-    python3Packages.importlib-metadata
-    python3Packages.importlib-resources
-    python3Packages.jinja2
-    python3Packages.jsonschema
-    python3Packages.jsonschema-specifications
-    python3Packages.litellm
-    python3Packages.markdown-it-py
-    python3Packages.markupsafe
-    python3Packages.mccabe
-    python3Packages.mdurl
-    python3Packages.multidict
-    python3Packages.networkx
-    python3Packages.numpy
-    python3Packages.openai
-    python3Packages.packaging
-    python3Packages.pathspec
-    python3Packages.pillow
-    python3Packages.prompt-toolkit
-    python3Packages.pycodestyle
-    python3Packages.pycparser
-    python3Packages.pydantic
-    python3Packages.pydantic-core
-    python3Packages.pyflakes
-    python3Packages.pygments
-    python3Packages.pypandoc
-    python3Packages.python-dotenv
-    python3Packages.pyyaml
-    python3Packages.referencing
-    python3Packages.regex
-    python3Packages.requests
-    python3Packages.rich
-    python3Packages.rpds-py
-    python3Packages.scipy
-    python3Packages.smmap
-    python3Packages.sniffio
-    python3Packages.sounddevice
-    python3Packages.soundfile
-    python3Packages.soupsieve
-    python3Packages.tiktoken
-    python3Packages.tokenizers
-    python3Packages.tqdm
-    # tree-sitter.override { version = tree_sitter_version; }
-    # tree-sitter-languages.override { version = tree_sitter_languages_version; }
-    python3Packages.typing-extensions
-    python3Packages.urllib3
-    python3Packages.wcwidth
-    python3Packages.yarl
-    python3Packages.zipp
-    py_tree_sitter
-    py_tree_sitter_languages
-    configparser
-    grep_ast
-  ];
+  disabledTests =
+    [
+      # requires network
+      "test_urls"
+      "test_get_commit_message_with_custom_prompt"
 
-  pythonImportsCheck = ["aider"];
+      # FileNotFoundError
+      "test_get_commit_message"
 
-  # postInstall = ''
-  #   mkdir -p $out/bin
-  #   ln -s $out/lib/python${python3Packages.python.version}/site-packages/aider $out/bin/aider
-  # '';
+      # Expected 'launch_gui' to have been called once
+      "test_browser_flag_imports_streamlit"
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      # fails on darwin
+      "test_dark_mode_sets_code_theme"
+      "test_default_env_file_sets_automatic_variable"
+    ];
 
-  # postInstall = ''
-  #   wrapProgram $out/bin/aider \
-  #     --set PYTHONPATH $out/${python3Packages.python.sitePackages}
-  # '';
-  #
-  # checkPhase = ''
-  #   ${python3Packages.python.interpreter} -m aider --help
-  # '';
+  preCheck = ''
+    export HOME=$(mktemp -d)
+  '';
 
-  meta = with lib; {
-    description = "Aider is AI pair programming in your terminal.";
-    homepage = "https://aider.chat";
-    license = licenses.asl20; # Apache 2.0 License
-    maintainers = with maintainers; [ smantzavinos ];
+  meta = {
+    description = "AI pair programming in your terminal";
+    homepage = "https://github.com/paul-gauthier/aider";
+    license = lib.licenses.asl20;
+    mainProgram = "aider";
+    maintainers = with lib.maintainers; [ taha-yassine ];
   };
 }
