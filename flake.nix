@@ -12,10 +12,22 @@
     in {
       # defaultPackage.x86_64-linux = pkgs.callPackage ./aider-package.nix {};
 
-      packages = {
-        default = aider;
-      };
+      # packages = {
+      #   default = aider;
+      # };
 
+      # defaultPackage.${system} = aider;
+
+      packages.${system}.default = aider;
+
+      # Expose aider as a defaultPackage
       defaultPackage.${system} = aider;
+
+      # Optionally, expose aider as a direct output
+      # apps.${system} = {
+      #   aider = pkgs.writeShellScriptBin "aider" ''
+      #     ${aider}/bin/aider "$@"
+      #   '';
+      # };
     };
 }
