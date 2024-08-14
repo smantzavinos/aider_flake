@@ -15,14 +15,14 @@ let
 in
 python3.pkgs.buildPythonApplication rec {
   pname = "aider-chat";
-  version = "0.48.0";
+  version = "0.50.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "paul-gauthier";
     repo = "aider";
     rev = "v${version}";
-    hash = "sha256-0m5ZHCfxlOOeUvfQznF5hTCJANCBtrO9rWDudQ+RUxM=";
+    hash = "sha256-hRUxzljtgLGEDwHf6UtQzGQM8CgiRtgNLlVoKa2jU3o=";
   };
 
   build-system = with python3.pkgs; [ setuptools ];
@@ -40,6 +40,7 @@ python3.pkgs.buildPythonApplication rec {
       gitpython
       grep-ast
       importlib-resources
+      jiter
       jsonschema
       litellm
       networkx
@@ -50,6 +51,7 @@ python3.pkgs.buildPythonApplication rec {
       playwright
       prompt-toolkit
       pypandoc
+      pyperclip
       pyyaml
       rich
       scipy
