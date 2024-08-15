@@ -15,13 +15,15 @@ let
 
   pypager = python3.pkgs.buildPythonPackage rec {
     pname = "pypager";
-    version = "0.0.1";  # You can set the appropriate version here
+    version = "3.0.0";
     src = fetchFromGitHub {
       owner = "prompt-toolkit";
       repo = "pypager";
       rev = "10c8ece990dfe397b80b0cd039e8ec34fd89e62f";
       hash = "sha256-ny8ECWpI6ZoHLuSaNpS+wNPrG+OYDy42bAQgk40YAqw=";
     };
+
+    nativeBuildInputs = with python3.pkgs; [ setuptools wheel pip ];
 
     propagatedBuildInputs = with python3.pkgs; [
       prompt-toolkit
