@@ -27,6 +27,7 @@ let
 
     propagatedBuildInputs = with python3.pkgs; [
       prompt-toolkit
+      pygments
     ];
   };
 in
