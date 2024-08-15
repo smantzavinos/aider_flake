@@ -5,6 +5,12 @@
   fetchFromGitHub,
   git,
   portaudio,
+  pypager = fetchFromGitHub {
+    owner = "prompt-toolkit";
+    repo = "pypager";
+    rev = "10c8ece990dfe397b80b0cd039e8ec34fd89e62f";
+    hash = "sha256-ny8ECWpI6ZoHLuSaNpS+wNPrG+OYDy42bAQgk40YAqw=";
+  };
 }:
 
 let
@@ -52,6 +58,7 @@ python3.pkgs.buildPythonApplication rec {
       playwright
       prompt-toolkit
       pypandoc
+      pypager
       pyperclip
       pyyaml
       rich
