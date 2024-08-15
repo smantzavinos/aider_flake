@@ -60,6 +60,7 @@ python3.pkgs.buildPythonApplication rec {
       prompt-toolkit
       pypandoc
       pypager
+      pypager
       pyperclip
       pyyaml
       rich
@@ -74,7 +75,7 @@ python3.pkgs.buildPythonApplication rec {
       llama-index-embeddings-huggingface
     ];
 
-  buildInputs = [ portaudio ];
+  buildInputs = [ portaudio pypager ];
 
   pythonRelaxDeps = true;
 
