@@ -75,7 +75,7 @@ python3.pkgs.buildPythonApplication rec {
       llama-index-embeddings-huggingface
     ];
 
-  buildInputs = [ portaudio pypager ];
+  buildInputs = [ portaudio ];
 
   pythonRelaxDeps = true;
 
