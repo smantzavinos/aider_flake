@@ -59,17 +59,22 @@ python3.pkgs.buildPythonApplication rec {
       grep-ast
       importlib-resources
       jiter
+      json5
       jsonschema
       litellm
+      mixpanel
+      monotonic
       networkx
       numpy
       packaging
       pathspec
       pillow
       playwright
+      posthog
       prompt-toolkit
+      propcache
+      pydub
       pypandoc
-      pypager
       pypager
       pyperclip
       pyyaml
@@ -111,6 +116,9 @@ python3.pkgs.buildPythonApplication rec {
 
       # Expected 'launch_gui' to have been called once
       "test_browser_flag_imports_streamlit"
+
+      # Fails to get environment vars
+      "test_pytest_env_vars"
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       # fails on darwin
