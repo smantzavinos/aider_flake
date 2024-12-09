@@ -85,6 +85,7 @@ python3.pkgs.buildPythonApplication rec {
       soundfile
       streamlit
       watchdog
+      watchfiles
     ]
     ++ lib.optionals (!tensorflow.meta.broken) [
       llama-index-core
