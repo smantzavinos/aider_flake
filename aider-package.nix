@@ -33,14 +33,14 @@ let
 in
 python3.pkgs.buildPythonApplication rec {
   pname = "aider-chat";
-  version = "0.66.0";
+  version = "0.67.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "paul-gauthier";
     repo = "aider";
     rev = "v${version}";
-    hash = "sha256-6wD8wBDV6Roo3J+oEYiBzZ7i1iGOZhcoiKXHV7AJjDk=";
+    hash = "sha256-JuUfG/+svkkPlBiHx6rJX60gTl+DXDOzmjASMbDWEsw=";
   };
 
   build-system = with python3.pkgs; [ setuptools ];
