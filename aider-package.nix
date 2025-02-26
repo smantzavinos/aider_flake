@@ -83,6 +83,7 @@ python3.pkgs.buildPythonApplication rec {
       rich
       setuptools-scm
       scipy
+      socksio
       sounddevice
       soundfile
       streamlit
