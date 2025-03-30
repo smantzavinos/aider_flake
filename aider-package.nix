@@ -31,19 +31,22 @@ let
     ];
   };
 in
-python3.pkgs.buildPythonApplication rec {
-  pname = "aider-chat";
-  version = "0.70.0";
-  pyproject = true;
+let
+  version = "0.75.2";
+  
+  aider-chat = python3.pkgs.buildPythonPackage {
+    pname = "aider-chat";
+    inherit version;
+    pyproject = true;
 
-  src = fetchFromGitHub {
-    owner = "Aider-AI";
-    repo = "aider";
-    rev = "v${version}";
-    hash = "sha256-wGm6JV9ISRi/p1lA3JyzOdHQKFHFxEhfr+NdShUxm0M=";
-  };
+    src = fetchFromGitHub {
+      owner = "Aider-AI";
+      repo = "aider";
+      rev = "v${version}";
+      hash = "sha256-wGm6JV9ISRi/p1lA3JyzOdHQKFHFxEhfr+NdShUxm0M=";
+    };
 
-  build-system = with python3.pkgs; [ setuptools ];
+    build-system = with python3.pkgs; [ setuptools ];
 
   dependencies =
     with python3.pkgs;
@@ -154,29 +157,31 @@ python3.pkgs.buildPythonApplication rec {
     ];
   };
 
-  passthru = let final = self; in {
-    withPlaywright = final.overridePythonAttrs (
-      { dependencies
-      , makeWrapperArgs
-      , propagatedBuildInputs ? []
-      , ...
-      }: {
-        dependencies = dependencies ++ final.optional-dependencies.playwright;
-        propagatedBuildInputs = propagatedBuildInputs ++ [ playwright-driver.browsers ];
-        makeWrapperArgs = makeWrapperArgs ++ [
-          "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
-          "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
-        ];
-      }
-    );
-  };
+    passthru = {
+      withPlaywright = aider-chat.overridePythonAttrs (
+        { dependencies
+        , makeWrapperArgs
+        , propagatedBuildInputs ? []
+        , ...
+        }: {
+          dependencies = dependencies ++ aider-chat.optional-dependencies.playwright;
+          propagatedBuildInputs = propagatedBuildInputs ++ [ playwright-driver.browsers ];
+          makeWrapperArgs = makeWrapperArgs ++ [
+            "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
+            "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
+          ];
+        }
+      );
+    };
 
-  meta = {
+    meta = {
     description = "AI pair programming in your terminal";
     homepage = "https://github.com/paul-gauthier/aider";
     changelog = "https://github.com/paul-gauthier/aider/blob/v${version}/HISTORY.md";
     license = lib.licenses.asl20;
     mainProgram = "aider";
-    maintainers = with lib.maintainers; [ taha-yassine ];
+      maintainers = with lib.maintainers; [ taha-yassine ];
+    };
   };
-}
+in
+aider-chat
