@@ -106,15 +106,11 @@ python3.pkgs.buildPythonApplication rec {
 
     # Expected 'mock' to have been called once
     "tests/help/test_help.py"
-
-    # TODO: probably shouldn't be here but build fails without it. (added with v0.70.0)
-    # don't know why these tests are failing
-    "tests/basic/test_sendchat.py"
   ];
 
   disabledTests =
     [
-      # requires network
+      # Tests require network
       "test_urls"
       "test_get_commit_message_with_custom_prompt"
 
@@ -124,27 +120,61 @@ python3.pkgs.buildPythonApplication rec {
       # Expected 'launch_gui' to have been called once
       "test_browser_flag_imports_streamlit"
 
-      # Fails to get environment vars
-      "test_pytest_env_vars"
+      # AttributeError
+      "test_simple_send_with_retries"
+      # Expected 'check_version' to have been called once
+      "test_main_exit_calls_version_check"
+      # AssertionError: assert 2 == 1
+      "test_simple_send_non_retryable_error"
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       # fails on darwin
       "test_dark_mode_sets_code_theme"
       "test_default_env_file_sets_automatic_variable"
-
-      # TODO: disabled above with test_sendchat.py (added with v0.70.0)
-      # don't know why these tests are failing
-      # "test_simple_send_non_retryable_error"
-      # "test_simple_send_with_retries_rate_limit_error"
+      # FileNotFoundError: [Errno 2] No such file or directory: 'vim'
+      "test_pipe_editor"
     ];
+
+  makeWrapperArgs = [
+    "--set AIDER_CHECK_UPDATE false"
+    "--set AIDER_ANALYTICS false"
+  ];
 
   preCheck = ''
     export HOME=$(mktemp -d)
+    export AIDER_ANALYTICS="false"
   '';
+
+  optional-dependencies = with python3.pkgs; {
+    playwright = [
+      greenlet
+      playwright
+      pyee
+      typing-extensions
+    ];
+  };
+
+  passthru = {
+    withPlaywright = aider-chat.overridePythonAttrs (
+      { dependencies
+      , makeWrapperArgs
+      , propagatedBuildInputs ? []
+      , ...
+      }: {
+        dependencies = dependencies ++ aider-chat.optional-dependencies.playwright;
+        propagatedBuildInputs = propagatedBuildInputs ++ [ playwright-driver.browsers ];
+        makeWrapperArgs = makeWrapperArgs ++ [
+          "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
+          "--set PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true"
+        ];
+      }
+    );
+  };
 
   meta = {
     description = "AI pair programming in your terminal";
     homepage = "https://github.com/paul-gauthier/aider";
+    changelog = "https://github.com/paul-gauthier/aider/blob/v${version}/HISTORY.md";
     license = lib.licenses.asl20;
     mainProgram = "aider";
     maintainers = with lib.maintainers; [ taha-yassine ];
