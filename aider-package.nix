@@ -5,6 +5,7 @@
   fetchFromGitHub,
   git,
   portaudio,
+  playwright-driver,
 }:
 
 let
