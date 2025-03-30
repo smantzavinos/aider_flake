@@ -154,14 +154,14 @@ python3.pkgs.buildPythonApplication rec {
     ];
   };
 
-  passthru = {
-    withPlaywright = aider-chat.overridePythonAttrs (
+  passthru = let final = self; in {
+    withPlaywright = final.overridePythonAttrs (
       { dependencies
       , makeWrapperArgs
       , propagatedBuildInputs ? []
       , ...
       }: {
-        dependencies = dependencies ++ aider-chat.optional-dependencies.playwright;
+        dependencies = dependencies ++ final.optional-dependencies.playwright;
         propagatedBuildInputs = propagatedBuildInputs ++ [ playwright-driver.browsers ];
         makeWrapperArgs = makeWrapperArgs ++ [
           "--set PLAYWRIGHT_BROWSERS_PATH ${playwright-driver.browsers}"
