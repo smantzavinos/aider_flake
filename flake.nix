@@ -42,21 +42,21 @@
         # Add overlay for additional packages or overrides
         # Extend generated overlay with build fixups
         extraOverlay = final: prev: {
-          # Add any necessary overrides here
-          aider-chat = prev.aider-chat.overrideAttrs (old: {
-            nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ pkgs.makeWrapper ];
-            propagatedBuildInputs = (old.propagatedBuildInputs or []) ++ [
-              pkgs.git
-            ];
-
-            postInstall = ''
-              wrapProgram $out/bin/aider \
-                --set PYTHONPATH "${placeholder "out"}/${python.sitePackages}:$PYTHONPATH"
-            '';
-          });
-    
-          # Create a package alias for backward compatibility
-          aider = final.aider-chat;
+          # # Add any necessary overrides here
+          # aider-chat = prev.aider-chat.overrideAttrs (old: {
+          #   nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ pkgs.makeWrapper ];
+          #   propagatedBuildInputs = (old.propagatedBuildInputs or []) ++ [
+          #     pkgs.git
+          #   ];
+          #
+          #   postInstall = ''
+          #     wrapProgram $out/bin/aider \
+          #       --set PYTHONPATH "${placeholder "out"}/${python.sitePackages}:$PYTHONPATH"
+          #   '';
+          # });
+          #
+          # # Create a package alias for backward compatibility
+          # aider = final.aider-chat;
         };
 
         # Construct Python package set
@@ -76,14 +76,28 @@
         
       in
       {
-        packages = {
-          inherit aider;
-          default = aider;
-        };
+        # packages = {
+        #   inherit aider;
+        #   default = aider;
+        # };
+        #
+        # apps.default = flake-utils.lib.mkApp {
+        #   drv = aider;
+        #   name = "aider";
+        # };
 
-        apps.default = flake-utils.lib.mkApp {
-          drv = aider;
-          name = "aider";
+
+        # Package a virtual environment as our main application.
+        #
+        # Enable no optional dependencies for production build.
+        packages.default = pythonSet.mkVirtualEnv "aider-env" workspace.deps.default;
+
+        # Make hello runnable with `nix run`
+        apps.x86_64-linux = {
+          default = {
+            type = "app";
+            program = "${self.packages.x86_64-linux.default}/bin/aider";
+          };
         };
 
         devShells.default = pkgs.mkShell {
