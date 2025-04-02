@@ -44,6 +44,7 @@
         extraOverlay = final: prev: {
           # Add any necessary overrides here
           aider-chat = prev.aider-chat.overrideAttrs (old: {
+            nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ pkgs.makeWrapper ];
             propagatedBuildInputs = (old.propagatedBuildInputs or []) ++ [
               pkgs.git
             ];
