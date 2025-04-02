@@ -1,33 +1,112 @@
 {
-  description = "Aider package";
+  description = "Aider - AI pair programming in your terminal";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
 
-  outputs = { self, nixpkgs, ... }:
-    let
-      # pkgs = import nixpkgs { system = "x86_64-linux"; };
-      system = "x86_64-linux";
-      pkgs = import nixpkgs { inherit system; };
-      aider = pkgs.callPackage ./aider-package.nix {};
-    in {
-      # defaultPackage.x86_64-linux = pkgs.callPackage ./aider-package.nix {};
-
-      # packages = {
-      #   default = aider;
-      # };
-
-      # defaultPackage.${system} = aider;
-
-      packages.${system}.default = aider;
-
-      # Expose aider as a defaultPackage
-      defaultPackage.${system} = aider;
-
-      # Optionally, expose aider as a direct output
-      # apps.${system} = {
-      #   aider = pkgs.writeShellScriptBin "aider" ''
-      #     ${aider}/bin/aider "$@"
-      #   '';
-      # };
+    pyproject-nix = {
+      url = "github:pyproject-nix/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.uv2nix.follows = "uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, flake-utils, uv2nix, pyproject-nix, pyproject-build-systems, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = nixpkgs.legacyPackages.${system};
+        python = pkgs.python311;
+        inherit (nixpkgs) lib;
+
+        # Load the uv workspace
+        workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
+
+        # Create package overlay from workspace
+        overlay = workspace.mkPyprojectOverlay {
+          sourcePreference = "wheel"; # prefer binary wheels
+        };
+
+        # Add overlay for additional packages or overrides
+        extraOverlay = final: prev: {
+          # Add aider package, which we'll modify from the workspace if needed
+          aider-chat = prev.callPackage pyproject-nix.build.buildPythonPackage {
+            pname = "aider-chat";
+            version = "0.79.0";
+            
+            src = pkgs.fetchPypi {
+              pname = "aider-chat";
+              version = "0.79.0";
+              hash = "sha256-FS4SJWBzKuGbcICt7sIBzswLhXu+UMGiLVzMijO2A0k=";
+            };
+            
+            format = "pyproject";
+            
+            propagatedBuildInputs = [
+              pkgs.git
+            ];
+          };
+          
+          # Create a package alias for backward compatibility
+          aider = final.aider-chat;
+        };
+
+        # Construct Python package set
+        pythonSet =
+          (pkgs.callPackage pyproject-nix.build.packages {
+            inherit python;
+          }).overrideScope
+            (
+              lib.composeManyExtensions [
+                pyproject-build-systems.overlays.default
+                overlay
+                extraOverlay
+              ]
+            );
+
+        aider = pythonSet.aider;
+        
+      in
+      {
+        packages = {
+          inherit aider;
+          default = aider;
+        };
+
+        apps.default = flake-utils.lib.mkApp {
+          drv = aider;
+          name = "aider";
+        };
+
+        devShells.default = pkgs.mkShell {
+          packages = [
+            aider
+            python
+            pkgs.uv
+          ];
+          
+          env = {
+            # Prevent uv from managing Python downloads
+            UV_PYTHON_DOWNLOADS = "never";
+            # Force uv to use nixpkgs Python interpreter
+            UV_PYTHON = python.interpreter;
+          };
+          
+          shellHook = ''
+            unset PYTHONPATH
+          '';
+        };
+      });
 }

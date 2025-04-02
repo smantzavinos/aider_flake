@@ -1,0 +1,18 @@
+[project]
+name = "aider-flake"
+version = "0.1.0"
+description = "Aider - AI pair programming in your terminal"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aider-chat==0.80.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6.7",
+]
