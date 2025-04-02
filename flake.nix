@@ -47,11 +47,11 @@
             propagatedBuildInputs = (old.propagatedBuildInputs or []) ++ [
               pkgs.git
             ];
-      
-            # Ensure the Python path includes the package
-            makeWrapperArgs = (old.makeWrapperArgs or []) ++ [
-              "--set PYTHONPATH ${prev.aider-chat}/${python.sitePackages}:$PYTHONPATH"
-            ];
+
+            postInstall = ''
+              wrapProgram $out/bin/aider \
+                --set PYTHONPATH "${placeholder "out"}/${python.sitePackages}:$PYTHONPATH"
+            '';
           });
     
           # Create a package alias for backward compatibility
@@ -102,7 +102,6 @@
           };
     
           shellHook = ''
-            unset PYTHONPATH
             export PYTHONPATH="${aider}/${python.sitePackages}:$PYTHONPATH"
           '';
         };
