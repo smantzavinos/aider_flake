@@ -47,8 +47,13 @@
             propagatedBuildInputs = (old.propagatedBuildInputs or []) ++ [
               pkgs.git
             ];
+      
+            # Ensure the Python path includes the package
+            makeWrapperArgs = (old.makeWrapperArgs or []) ++ [
+              "--set PYTHONPATH ${prev.aider-chat}/${python.sitePackages}:$PYTHONPATH"
+            ];
           });
-          
+    
           # Create a package alias for backward compatibility
           aider = final.aider-chat;
         };
@@ -86,16 +91,19 @@
             python
             pkgs.uv
           ];
-          
+    
           env = {
             # Prevent uv from managing Python downloads
             UV_PYTHON_DOWNLOADS = "never";
             # Force uv to use nixpkgs Python interpreter
             UV_PYTHON = python.interpreter;
+            # Ensure Python can find the package
+            PYTHONPATH = "${aider}/${python.sitePackages}:$PYTHONPATH";
           };
-          
+    
           shellHook = ''
             unset PYTHONPATH
+            export PYTHONPATH="${aider}/${python.sitePackages}:$PYTHONPATH"
           '';
         };
       });
