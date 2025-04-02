@@ -40,24 +40,14 @@
         };
 
         # Add overlay for additional packages or overrides
+        # Extend generated overlay with build fixups
         extraOverlay = final: prev: {
-          # Add aider package, which we'll modify from the workspace if needed
-          aider-chat = prev.callPackage pyproject-nix.build.buildPythonPackage {
-            pname = "aider-chat";
-            version = "0.79.0";
-            
-            src = pkgs.fetchPypi {
-              pname = "aider-chat";
-              version = "0.79.0";
-              hash = "sha256-FS4SJWBzKuGbcICt7sIBzswLhXu+UMGiLVzMijO2A0k=";
-            };
-            
-            format = "pyproject";
-            
-            propagatedBuildInputs = [
+          # Add any necessary overrides here
+          aider-chat = prev.aider-chat.overrideAttrs (old: {
+            propagatedBuildInputs = (old.propagatedBuildInputs or []) ++ [
               pkgs.git
             ];
-          };
+          });
           
           # Create a package alias for backward compatibility
           aider = final.aider-chat;
