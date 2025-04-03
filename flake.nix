@@ -72,7 +72,7 @@
               ]
             );
 
-        aider = pythonSet.aider;
+        # aider = pythonSet.aider;
         
       in
       {
@@ -102,7 +102,7 @@
 
         devShells.default = pkgs.mkShell {
           packages = [
-            aider
+            # aider
             python
             pkgs.uv
           ];
@@ -113,11 +113,15 @@
             # Force uv to use nixpkgs Python interpreter
             UV_PYTHON = python.interpreter;
             # Ensure Python can find the package
-            PYTHONPATH = "${aider}/${python.sitePackages}:$PYTHONPATH";
+            # PYTHONPATH = "${aider}/${python.sitePackages}:$PYTHONPATH";
+          }// lib.optionalAttrs pkgs.stdenv.isLinux {
+              # Python libraries often load native shared objects using dlopen(3).
+              # Setting LD_LIBRARY_PATH makes the dynamic library loader aware of libraries without using RPATH for lookup.
+              LD_LIBRARY_PATH = lib.makeLibraryPath pkgs.pythonManylinuxPackages.manylinux1;
           };
     
           shellHook = ''
-            export PYTHONPATH="${aider}/${python.sitePackages}:$PYTHONPATH"
+            unset PYTHONPATH
           '';
         };
       });
