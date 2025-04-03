@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Development environment for Aider"
 requires-python = ">=3.11"
 dependencies = [
-    "aider-chat==0.80.1",
+    "aider-chat==0.80.2",
 ]
 
 [build-system]
